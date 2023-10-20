@@ -20,7 +20,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 enum ImageSourceType { gallery, camera }
 
 class HomePage extends StatelessWidget {
@@ -65,6 +64,7 @@ class HomePage extends StatelessWidget {
         ));
   }
 }
+
 
 class ImageFromGalleryEx extends StatefulWidget {
   final type;
