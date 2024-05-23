@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Asset Picker Example',
+      title: 'Asset Picker Exampled',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
