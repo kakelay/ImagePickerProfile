@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Asset Picker Exampled',
+      title: 'Asset Picker Example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -27,12 +27,27 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<AssetEntity> _selectedAssets = [];
-
   void _onSelectAssets(List<AssetEntity> assets) {
-    setState(() {
-      _selectedAssets = List<AssetEntity>.from(assets);
-    });
+    // Navigate to a new page to display the selected images
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DisplaySelectedAssetsPage(
+          selectedAssets: assets,
+        ),
+      ),
+    );
+  }
+
+  void _onCameraImagePicked(XFile img) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DisplaySelectedAssetsPage(
+          cameraImagePath: img.path,
+        ),
+      ),
+    );
   }
 
   @override
@@ -45,66 +60,89 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                AssetPicker.pickAssets(context,
-                    pickerConfig: AssetPickerConfig(
-                      specialItemPosition: SpecialItemPosition.prepend,
-                      specialItemBuilder: (context, path, length) {
-                        return GestureDetector(
-                          onTap: () async {
-                            final img = await ImagePicker.platform
-                                .pickImage(source: ImageSource.camera);
+            GestureDetector(
+              onTap: () async {
+                final List<AssetEntity>? result = await AssetPicker.pickAssets(
+                  context,
+                  pickerConfig: AssetPickerConfig(
+                    maxAssets: 1, // Limit selection to one asset
+                    specialItemPosition: SpecialItemPosition.prepend,
+                    requestType: RequestType.image,
+                    specialItemBuilder: (context, path, length) {
+                      return GestureDetector(
+                        onTap: () async {
+                          final img = await ImagePicker()
+                              .pickImage(source: ImageSource.camera);
 
-                            if (img != null) {
-                              Navigator.pop(context);
-                              showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  useSafeArea: true,
-                                  showDragHandle: true,
-                                  builder: (context) {
-                                    return Image.file(File(img.path));
-                                  });
-                            }
-                          },
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            color: Colors.red,
-                          ),
-                        );
-                      },
-                    ));
-              },
-              child: Text('Pick Images and Videos'),
-            ),
-            SizedBox(height: 20),
-            if (_selectedAssets.isNotEmpty)
-              Column(
-                children: [
-                  Text('Selected Images and Videos:'),
-                  SizedBox(height: 10),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 4.0,
-                      crossAxisSpacing: 4.0,
-                    ),
-                    itemCount: _selectedAssets.length,
-                    itemBuilder: (context, index) {
-                      return Image(
-                        image: AssetEntityImageProvider(_selectedAssets[index],
-                            isOriginal: false),
-                        fit: BoxFit.cover,
+                          if (img != null) {
+                            Navigator.pop(context);
+                            _onCameraImagePicked(img);
+                          }
+                        },
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.red,
+                          child: Icon(Icons.camera_alt, color: Colors.white),
+                        ),
                       );
                     },
                   ),
-                ],
-              ),
+                );
+
+                if (result != null && result.isNotEmpty) {
+                  _onSelectAssets(result);
+                }
+              },
+              child: Text('Pick Image'),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class DisplaySelectedAssetsPage extends StatelessWidget {
+  final List<AssetEntity>? selectedAssets;
+  final String? cameraImagePath;
+
+  DisplaySelectedAssetsPage({
+    this.selectedAssets,
+    this.cameraImagePath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('$cameraImagePath ----- $selectedAssets')),
+      body: Center(
+        child: cameraImagePath != null
+            ? Image.file(File(cameraImagePath!))
+            : selectedAssets != null
+                ? GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 1, // Show one image per row
+                      crossAxisSpacing: 4,
+                      mainAxisSpacing: 4,
+                    ),
+                    itemCount: selectedAssets!.length,
+                    itemBuilder: (context, index) {
+                      return FutureBuilder<File?>(
+                        future: selectedAssets![index].file,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.done &&
+                              snapshot.hasData) {
+                            return Image.file(snapshot.data!,
+                                fit: BoxFit.cover);
+                          }
+                          return Center(child: CircularProgressIndicator());
+                        },
+                      );
+                    },
+                  )
+                : Text('No image selected'),
       ),
     );
   }
