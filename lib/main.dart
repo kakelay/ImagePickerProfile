@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
+import 'view_image.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -65,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 final List<AssetEntity>? result = await AssetPicker.pickAssets(
                   context,
                   pickerConfig: AssetPickerConfig(
-                    maxAssets: 1, // Limit selection to one asset
+                    maxAssets: 1,
                     specialItemPosition: SpecialItemPosition.prepend,
                     requestType: RequestType.image,
                     specialItemBuilder: (context, path, length) {
@@ -94,55 +96,21 @@ class _MyHomePageState extends State<MyHomePage> {
                   _onSelectAssets(result);
                 }
               },
-              child: Text('Pick Image'),
+              child: Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(20),
+                  ),
+                ),
+                child: Text(
+                  'Pick Image',
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class DisplaySelectedAssetsPage extends StatelessWidget {
-  final List<AssetEntity>? selectedAssets;
-  final String? cameraImagePath;
-
-  DisplaySelectedAssetsPage({
-    this.selectedAssets,
-    this.cameraImagePath,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('$cameraImagePath ----- $selectedAssets')),
-      body: Center(
-        child: cameraImagePath != null
-            ? Image.file(File(cameraImagePath!))
-            : selectedAssets != null
-                ? GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 1, // Show one image per row
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                    ),
-                    itemCount: selectedAssets!.length,
-                    itemBuilder: (context, index) {
-                      return FutureBuilder<File?>(
-                        future: selectedAssets![index].file,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                                  ConnectionState.done &&
-                              snapshot.hasData) {
-                            return Image.file(snapshot.data!,
-                                fit: BoxFit.cover);
-                          }
-                          return Center(child: CircularProgressIndicator());
-                        },
-                      );
-                    },
-                  )
-                : Text('No image selected'),
       ),
     );
   }
